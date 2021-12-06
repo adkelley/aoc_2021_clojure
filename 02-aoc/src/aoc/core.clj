@@ -1,7 +1,9 @@
 (ns aoc.core)
 (require '[clojure.string :refer [split]])
 
-;; Advent of Code 2021.  See https://adventofcode.com/2021/day/2
+;; Advent of Code 2021
+;; Day 2: Dive
+;; See https://adventofcode.com/2021/day/2 for problem description
 
 (def example "forward 5
 down 5
@@ -37,10 +39,12 @@ forward 2")
 
 (get-units "forward 5");; => 5
 
-(def position (atom {:depth 0 :horiz 0 :aim 0}))
+(def position
+  "Use an atom to store the position state"
+  (atom {:depth 0 :horiz 0 :aim 0}))
 
-(defn update-position
-  ""
+(defn update-position-p1
+  "Part 1 Instructions"
   [x]
   (let [command (get-command x)
          units   (get-units x)]
@@ -49,8 +53,8 @@ forward 2")
      (= command "up") (swap! position update :depth - units)
      (= command "down") (swap! position update :depth + units))))
 
-(defn update-position-aim
-  ""
+(defn update-position-p2
+  "Part 2 Instructions"
   [x]
   (let [command (get-command x)
         units   (get-units x)]
@@ -62,8 +66,8 @@ forward 2")
       (= command "down") (swap! position update :aim + units))))
 
 (defn pilot
-  "Keep track of horizontal and depth
-   multiply depth * horizontal to get the result"
+  "Keep track of the submarine's position.
+   Return depth * horizontal for final result"
   [xs update-fn]
   (if (empty? xs)
     (* (get @position :horiz) (get @position :depth))
@@ -71,9 +75,8 @@ forward 2")
       (update-fn (first xs))
       (recur (rest xs) update-fn))))
 
+(pilot (string->xs example) update-position-p1) ;; => 150
+(pilot (string->xs input) update-position-p1) ;; => 1882980
 
-(pilot (string->xs example) update-position) ;; => 150
-(pilot (string->xs input) update-position) ;; => 1882980
-
-(pilot (string->xs example) update-position-aim) ;; => 900
-(pilot (string->xs input) update-position-aim) ;; => 1971232560
+(pilot (string->xs example) update-position-p2) ;; => 900
+(pilot (string->xs input) update-position-p2) ;; => 1971232560

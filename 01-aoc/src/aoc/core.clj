@@ -1,6 +1,7 @@
 (ns aoc.core)
 (require '[clojure.string :refer [split]])
 
+;; Advent of Code 2021
 ;; Day 1: Sonar Sweep
 ;; See https://adventofcode.com/2021/day/1 for problem description
 
