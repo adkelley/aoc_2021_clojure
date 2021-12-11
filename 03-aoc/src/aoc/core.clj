@@ -51,15 +51,14 @@
 (defn gamma-rate
   "Returns the most common bit in the corresponding position of all numbers in 'xs'"
   [n data]
-  (let [set-bits #(bit-set %1 %2)]
    (loop [x (dec n)
           rate 0]
      (if (< x 0)
        rate
        (recur (dec x)
               (if (ones-common? x n data)
-                (set-bits rate x) 
-                rate))))))
+                (bit-set rate x) 
+                rate)))))
 
 (def gamma-example (gamma-rate 5 bits-example))
 (def gamma-input (gamma-rate 12 bits-input))
@@ -85,6 +84,10 @@ power-consumption-example ;; => 198
 (def power-consumption-input (* gamma-input epsilon-input))
 power-consumption-input ;; => 3912944
 
+;; ====================
+;; Part 2
+;; ====================
+
 (defn filter-values
   "Return binary numbers whose bit at position idx is x (1 or 0)"
   [idx n x xs]
@@ -97,14 +100,14 @@ power-consumption-input ;; => 3912944
                (conj nums (take n xs))
                nums)))))
 
-(filter-values 0 5 1 (str->bits example))
+(filter-values 0 5 1 bits-example)
 ;; => (1 1 1 1 0 1 0 1 1 0 1 0 1 1 1 1 0 1 0 1 1 1 1 0 0 1 0 0 0 0 1 1 0 0 1)
 
 (defn bits->num
-  "Return a number from a sequence of bits"
-  [n xs]
+  "Return a number from a sequence of bits in 'xs'"
+  [xs]
   (loop [res 0
-         pos (dec n)
+         pos (dec (count xs))
          xs  xs]
     (if (empty? xs)
       res 
@@ -114,37 +117,25 @@ power-consumption-input ;; => 3912944
              (dec pos)
              (rest xs)))))
 
-(defn oxygen-generator-rating
-  "Return the filtered version of ones-most-common down to one number"
-  [n xs]
+(defn rating
+  "Return the filtered version of most common or least common bits down to one number"
+  [most least n xs]
   (loop [xs xs
          x  0]
-    (if (= 1 (/ (count xs) n))
-      (bits->num n xs)
+    ;; one number left in xs?
+    (if (= (count xs) n)
+      (bits->num xs)
       (recur (if (ones-common? x n xs)
-               (filter-values x n 1 xs)
-               (filter-values x n 0 xs))
+               (filter-values x n most xs)
+               (filter-values x n least xs))
              (inc x)))))
 
 
-(oxygen-generator-rating 5 (str->bits example))
-
-(defn co2-scrubber-rating
-  "Return the filtered version of least-most-common down to one number"
-  [n xs ]
-  (loop [xs xs
-         x  0]
-    (if (= 1 (/ (count xs) n))
-      (bits->num n xs)
-      (recur (if (ones-common? x n xs)
-               (filter-values x n 0 xs)
-               (filter-values x n 1 xs))
-             (inc x)))))
-
-
-
-(co2-scrubber-rating 5 (str->bits example))
+(def oxygen-generator-rating (rating 1 0 5 bits-example))
+(def oxygen-generator-rating_ (rating 1 0 12 bits-input))
+(def co2-scrubber-rating (rating 0 1 5 bits-example))
+(def co2-scrubber-rating_ (rating 0 1 12 bits-input))
 
 ;; life support rating = oxygen-generator-rating * c02-scrubber-rating
-(* (co2-scrubber-rating 5 bits-example) (oxygen-generator-rating 5 bits-example)) ;; => 230
-(* (co2-scrubber-rating 12 bits-input) (oxygen-generator-rating 12 bits-input)) ;; => 4996233
+(* co2-scrubber-rating oxygen-generator-rating) ;; => 230
+(* co2-scrubber-rating_ oxygen-generator-rating_) ;; => 4996233
