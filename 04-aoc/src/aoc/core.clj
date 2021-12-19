@@ -46,23 +46,18 @@
   [s]
   (->> (drop 1 s)
        (mapcat #(re-seq #"\d+" %))
-       (map #(Integer/parseInt %))
+       (map #(hash-map :number (Integer/parseInt %) :mark 0))
        vec))
-
 
 (def bingo-cards-example (bingo-cards puzzle-example))
 (def bingo-cards-input (bingo-cards puzzle-input))
 
 (defn mark-cards
   "Return marked when 'x' appears in 'cards' by marking index with 1"
-  [x cards marked]
-  (let [f #(if (= %1 x) (assoc %2 %3 1) %2)]
-    (loop [i 0
-           cards cards
-           marked marked]
-     (if (empty? cards)
-       marked
-       (recur (inc i) (rest cards) (f (first cards) marked i))))))
+  [x cards]
+  (map #(if (= x (:number %)) (assoc % :mark 1) %) cards))
+
+(mark-cards 5 bingo-cards-example)
 
 (defn row->col
   "Transpose card from rows first to column first order"
@@ -82,49 +77,46 @@
       xs
       (recur (drop 25 cards) (concat xs (row->col (take 25 cards)))))))
 
-(rows->cols (vec (range 50)))
-;; => (0 5 10 15 20 1 6 11 16 21 2 7 12 17 22 3 8 13 18 23 4 9 14 19 24 25 30 35 40 45 26 31 36 41 46 27 32 37 42 47 28 33 38 43 48 29 34 39 44 49)
-
+(defn drop-card
+  ""
+  [n cards]
+  (concat (take (* n 25) cards) (drop (* (inc n) 25) cards)))
 
 (defn winner?
   "Return card # when a row within a card is fully marked"
-  [marked win]
-  (let [ones? #(= 5 (reduce + (take 5 %)))
+  [cards win]
+  (let [ones? (fn [r] (= 5 (reduce + (map #(:mark %) (take 5 r)))))
         win? (fn [r c pos w] (if (or (ones? r) (ones? c)) (assoc w :card (quot pos 25)) w))]
-    (loop [rows marked
-           cols (rows->cols marked)
+    (loop [rows cards
+           cols (rows->cols cards)
            x      0
            win    win]
       (if (or (empty? rows) (:card win))
         win
         (recur (drop 5 rows) (drop 5 cols) (+ x 5) (win? rows cols x win))))))
 
-(def test-marked (vec (concat (repeat 40 0) (repeat 5 1) (repeat 5 0))))
-(winner? test-marked {:card nil :number 5})
-
 (defn score
   ""
-  [marked cards win]
-  (let [f #(if (= %1 0) (+ %2 %3) %2)]
+  [cards win]
+  (let [f #(if (= (:mark %1) 0) (+ %2 (:number %1)) %2)]
     (loop [x 25
           card (drop (* 25 (:card win)) cards)
-          mark (drop (* 25 (:card win)) marked)
           sum 0]
      (if (= x 0)
        (* sum (:number win))
-       (recur (dec x) (rest card) (rest mark) (f (first mark) sum (first card)))))))
+       (recur (dec x) (rest card) (f (first card) sum))))))
 
 (defn play-bingo-first
   "Return card # and winning #"
   [numbers cards]
     (loop [numbers numbers
-           marked (vec (repeat (count cards) 0))
+           cards cards
            win {:card nil :number nil}]
       (if (:card win)
-        (score marked cards win)
+        (score cards win)
         (recur (rest numbers)
-               (mark-cards (first numbers) cards marked)
-               (winner? (mark-cards (first numbers) cards marked) {:card nil :number (first numbers)})))))
+               (mark-cards (first numbers) cards)
+               (winner? (mark-cards (first numbers) cards) {:card nil :number (first numbers)})))))
 
 
 (play-bingo-first random-numbers-example bingo-cards-example) ;; => 4512
@@ -133,22 +125,25 @@
 ;;==================================
 ;; Part 2
 ;;===================================
-(defn play-bingo-last
+
+(defn play-bingo
   "Return card # and winning #"
-  [numbers cards marked]
+  [numbers cards]
   (loop [numbers numbers
-         marked marked
+         cards cards
          win {:card nil :number nil}]
     (if (:card win)
-      {:marked marked :numbers numbers :card (:card win) :number (:number win)} 
+       (if (> 25 (count cards))
+         (recur numbers (drop-card (:card win) cards) win)
+         (score cards win))
       (recur (rest numbers)
-             (mark-cards (first numbers) cards marked)
-             (winner? (mark-cards (first numbers) cards marked) {:card nil :number (first numbers)})))))
+             (mark-cards (first numbers) cards)
+             (winner? (mark-cards (first numbers) cards) {:card nil :number (first numbers)})))))
 
-(def marked-example (vec (repeat (count bingo-cards-example) 0)))
-(play-bingo-last random-numbers-example bingo-cards-example marked-example)
+(drop-card 2 bingo-cards-example)
+(play-bingo random-numbers-example bingo-cards-example)
 
-(def marked-input (vec (repeat (count bingo-cards-input) 0)))
-(play-bingo-last random-numbers-input bingo-cards-input marked-input) ;; => 72770
+;(def marked-input (vec (repeat (count bingo-cards-input) 0)))
+;(play-bingo-last random-numbers-input bingo-cards-input marked-input) ;; => 72770
 
-random-numbers-example
+;bingo-cards-example
