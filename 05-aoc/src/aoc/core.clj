@@ -29,6 +29,8 @@
 (defonce example->lines (data->lines example))
 (defonce input->lines (data->lines input))
 
+input->lines
+
 ;; process lines
 
 (defn first-line
@@ -85,37 +87,40 @@
 
 (non-diagnonal-lines example->lines)
 
+(def grid (atom {}))
+
 (defn new-point
   "Return map {:x x, :y y, :id hash :danger 0}"
   [x y]
-  (let [id (hash (str x y))]
-    {:x x :y y :id id :danger 0}))
-
-(map #(new-point % 0) (range 0 (inc 2)))
+  (let [id  (read-string (str ":" x y))
+        danger (get (deref grid) id 0)]
+    (swap! grid assoc id (inc danger))))
 
 (defn make-horiz-points
   ""
   [line]
   (let [y  (first-y line)
-        x1 (first-x line)
-        x2 (last-x  line)] 
-    (if (> x1 x2)
-      (map #(new-point % y) (range x2 (inc x1)))
-      (map #(new-point % y) (range x1 (inc x2))))))
+        x1 (min (first-x line) (last-x line))
+        x2 (inc (max (first-x line) (last-x  line)))] 
+    (for [x (range x1 x2)]
+       (new-point x y))))
 
-(make-horiz-points '(0 1 3 1))
+(reset! grid {})
+(make-horiz-points '(0 9 5 9))
+(deref grid)
 
 (defn make-vertical-points
   ""
-  [line]
+  [line] 
   (let [x  (first-x line)
-        y1 (first-y line)
-        y2 (last-y  line)] 
-    (if (> y1 y2)
-      (map #(new-point x %) (range y2 (inc y1)))
-      (map #(new-point x %) (range y1 (inc y2))))))
+        y1 (min (first-y line) (last-y line))
+        y2 (inc (max (first-y line ) (last-y line)))]
+    (for [y (range y1 y2)]
+      (new-point x y))))
 
-(make-vertical-points '(0 1 0 3)) 
+(reset! grid nil)
+(make-vertical-points '(0 1 0 9))
+(deref grid)
 
 (defn make-points
   ""
@@ -124,21 +129,23 @@
     (make-vertical-points line)
     (make-horiz-points line)))
 
-(make-points '(0 1 0 3))
 
 (defn make-grid
   ""
   [lines]
-  (reduce #(concat %1 (make-points %2)) {} lines))
+  (reset! grid nil)
+  (for [line lines]
+     (make-points line)))
 
 (make-grid (non-diagnonal-lines example->lines))
+(count (filter #(> (second %) 1) (deref grid))) ;; => 5
 
-(defn set-dangerous
-  ""
-  [grid]
-  grid)
+(make-grid (non-diagnonal-lines input->lines))
+(count (filter #(> (second %) 1) (deref grid)))
 
-  
+(deref grid)
+(count (deref grid))
+
 ;; Appendix
 (defn max-xs
   ""
@@ -155,5 +162,3 @@
   [lines]
   (* (max-xs lines) (max-ys lines)))
 
-(grid-size example->lines)
-(grid-size input->lines)
