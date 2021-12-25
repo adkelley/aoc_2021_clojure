@@ -1,6 +1,7 @@
 (ns aoc.core
   (:require
-   [clojure.string :as str]))
+   [clojure.java.io :as io]
+   [clojure.string :refer [split-lines]]))
 
 (def example
 "0,9 -> 5,9
@@ -14,151 +15,61 @@
 0,0 -> 8,8
 5,5 -> 8,2")
 
-(def input (slurp "resources/input.txt"))
+(def input (slurp (io/resource "input.txt")))
 
 (defn data->lines
   "Return collection of integers representing line
   segments x1, y1, x2, y2 . . ."
   [data]
   (->> data
-       str/split-lines
+       split-lines
        (mapcat #(re-seq #"\d+" %))
        (map #(Integer/parseInt %))
        (partition 4)))
 
-(defonce example->lines (data->lines example))
-(defonce input->lines (data->lines input))
 
-input->lines
-
-;; process lines
-
-(defn first-line
-  "Return first 4 integers (line segment) from lines"
-  [lines]
-  (first lines))
-
-(defn first-x
-  "Return x1 from line-segment x1, y1, x2, y2"
-  [line]
-  (first line))
-
-(defn first-y
-  "Return y1 from line-segment x1, y1, x2, y2"
-  [line]
-  (second line))
-
-(defn last-x
-  "Return x2 from line-segment x1, y1, x2, y2"
-  [line]
-  (nth line 2))
-
-(defn last-y
-  "Return y2 from line-segment x1, y1, x2, y2"
-  [line]
-  (nth line 3))
-
-
-(defn vertical-line?
+(defn vertical?
   ""
-  [line]
-  (= (first-x line) (last-x line)))
+  [[x1 _ x2 _]]
+  (= x1 x2))
 
-(vertical-line? '(0 1 0 3)) ;; => true
+(vertical? '(0 1 0 3)) ;; => true
 
-(defn horizontal-line?
+(defn horizontal?
   ""
-  [line]
-  (= (first-y line) (last-y line)))
+  [[_ y1 _ y2]]
+  (= y1 y2))
 
-(horizontal-line? '(0 1 3 1)) ;; => true
+(horizontal? '(0 1 3 1)) ;; => true
 
-(defn diagonal-line?
-  ""
-  [line]
-  (not (or (vertical-line? line) (horizontal-line? line))))
-
-(diagonal-line? '(0 1 3 3)) ;; => true
-
-(defn non-diagnonal-lines
-  "Return non-diagnonal lines from lines"
-  [lines]
-  (filter #(not (diagonal-line? %)) lines))
-
-(non-diagnonal-lines example->lines)
-
-(def grid (atom {}))
-
-(defn new-point
-  "Return map {:x x, :y y, :id hash :danger 0}"
-  [x y]
-  (let [id  (read-string (str ":" x y))
-        danger (get (deref grid) id 0)]
-    (swap! grid assoc id (inc danger))))
-
-(defn make-horiz-points
-  ""
-  [line]
-  (let [y  (first-y line)
-        x1 (min (first-x line) (last-x line))
-        x2 (inc (max (first-x line) (last-x  line)))] 
-    (for [x (range x1 x2)]
-       (new-point x y))))
-
-(reset! grid {})
-(make-horiz-points '(0 9 5 9))
-(deref grid)
-
-(defn make-vertical-points
-  ""
-  [line] 
-  (let [x  (first-x line)
-        y1 (min (first-y line) (last-y line))
-        y2 (inc (max (first-y line ) (last-y line)))]
-    (for [y (range y1 y2)]
-      (new-point x y))))
-
-(reset! grid nil)
-(make-vertical-points '(0 1 0 9))
-(deref grid)
+(defn inclusive-range
+  [a b]
+  (if (<= a b) (range a (inc b)) (range a (dec b) -1)))
 
 (defn make-points
   ""
   [line]
-  (if (vertical-line? line)
-    (make-vertical-points line)
-    (make-horiz-points line)))
+  (let [[x1 y1 x2 y2] line]
+    (cond
+      (vertical? line)   (map #(vector x1 %) (inclusive-range y1 y2))
+      (horizontal? line) (map #(vector % y1) (inclusive-range x1 x2))
+      :else              (map vector (inclusive-range x1 x2) (inclusive-range y1 y2)))))
 
 
-(defn make-grid
+(defn dangerous-areas
   ""
-  [lines]
-  (reset! grid nil)
-  (for [line lines]
-     (make-points line)))
+  [lines diagonal]
+  (let [line-filter-fn (if diagonal some? (some-fn horizontal? vertical?))]
+    (->> lines
+         (filter line-filter-fn)
+         (mapcat #(make-points %))
+         frequencies
+         vals
+         (filter (partial <= 2))
+         count)))
 
-(make-grid (non-diagnonal-lines example->lines))
-(count (filter #(> (second %) 1) (deref grid))) ;; => 5
+(dangerous-areas (data->lines example) false) ;; => 5
+(dangerous-areas (data->lines example) true) ;; => 12
 
-(make-grid (non-diagnonal-lines input->lines))
-(count (filter #(> (second %) 1) (deref grid)))
-
-(deref grid)
-(count (deref grid))
-
-;; Appendix
-(defn max-xs
-  ""
-  [lines]
-  (reduce max (take-nth 2 lines)))
-
-(defn max-ys
-  ""
-  [lines]
-  (reduce max (take-nth 2 (drop 1 lines))))
-
-(defn grid-size
-  ""
-  [lines]
-  (* (max-xs lines) (max-ys lines)))
-
+(dangerous-areas (data->lines input) false) ;; => 6687
+(dangerous-areas (data->lines input) true) ;; => 19851
