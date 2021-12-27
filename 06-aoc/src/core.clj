@@ -28,9 +28,12 @@
 (defn next-day
   "Return state of fish after one-day"
   [fish]
-  (let [v8 (get fish 0)
-        v6 #(assoc % 6 (+ v8 (get % 6)))]
-    (v6 (assoc (vec (drop 1 fish)) 8 v8))))
+  (let [r0 (get fish 0) ;; # new fish
+        r0r7 (vec (drop 1 fish)) ;; shift registers left
+        r0r8 (assoc r0r7 8 r0)   ;; add back r8 with value of r0
+        r6   #(assoc % 6 (+ r0 (get % 6))) ;; update register 6 w/ # resets
+        ]
+    (r6 r0r8)))
 
 
 (next-day (next-day (next-day (next-day [0 1 1 2 1 0 0 0 0]))))
