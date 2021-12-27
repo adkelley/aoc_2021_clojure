@@ -43,11 +43,15 @@
 (defn calculate
   "Return number of latern fish created after days"
   [days fish] 
-  (reduce + (last (take (inc days) (iterate next-day fish)))))
+  (->> (initial-timers fish)
+       (iterate next-day)
+       (take (inc days))
+        last
+       (reduce +)))
 
-(calculate 80 (initial-timers (data->vector example))) ;; => 5934
-(calculate 80 (initial-timers (data->vector input))) ;; => 360610
+(calculate 80 (data->vector example)) ;; => 5934
+(calculate 80 (data->vector input)) ;; => 360610
 
 ;; Part 2
-(calculate 256 (initial-timers (data->vector example))) ;; => 26984457539
-(calculate 256 (initial-timers (data->vector input))) ;; => 1631629590423
+(calculate 256 (data->vector example)) ;; => 26984457539
+(calculate 256 (data->vector input)) ;; => 1631629590423
