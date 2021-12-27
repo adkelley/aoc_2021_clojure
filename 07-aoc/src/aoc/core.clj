@@ -17,25 +17,61 @@
 (defonce example->vector (data->vector example))
 (defonce input->vector (data->vector input))
 
-(defn max-num
-  "Return max number in collection"
-  [coll]
-  (reduce max coll))
+(defn max-pos
+  "Return max pos in collection"
+  [ps]
+  (reduce max ps))
 
-(defn min-num
+(defn min-pos
   "Return min number in collection"
-  [coll]
-  (reduce min coll))
+  [ps]
+  (reduce min ps))
 
-(max-num (data->vector example)) ;; => 16
-(min-num (data->vector example)) ;; => 0
-(max-num (data->vector input)) ;; => 1954
-(min-num (data->vector input)) ;; => 0
+(max-pos (data->vector example)) ;; => 16
+(min-pos (data->vector example)) ;; => 0
+(max-pos (data->vector input)) ;; => 1954
+(min-pos (data->vector input)) ;; => 0
 
-(defn initial-vec
-  "Return vector of [] equal to length of p0 to pn"
-  [coll]
-  (let [length (inc (- (max-num coll) (min-num coll)))]
-    (vec (take length (repeat [])))))
+(defn inclusive-range
+  [a b]
+  (if (<= a b) (range a (inc b)) (range a (dec b) -1)))
 
-(initial-vec example->vector)
+(defn distance
+  [x1 x2]
+  (Math/sqrt (Math/pow (- x2 x1) 2)))
+
+(defn distance2
+  [x1 x2]
+  (let [length (distance x1 x2)]
+    (->> (inclusive-range 1 length)
+         (reduce +))))
+
+(defn calculate1
+  "Return vector of []'s equal to length of p0pn"
+  [ps]
+  (let [x->y (fn [x2] (map #(distance % x2) ps))]
+    (->>
+     (inclusive-range (min-pos ps) (max-pos ps))
+     (map x->y)
+     (map (partial reduce +))
+     (reduce (partial min)))))
+
+(defn calculate2
+  "Return vector of []'s equal to length of p0pn"
+  [ps]
+  (let [x->y (fn [x2] (map #(distance2 % x2) ps))]
+    (->>
+     (inclusive-range (min-pos ps) (max-pos ps))
+     (map x->y)
+     (map (partial reduce +))
+     (reduce (partial min)))))
+
+(calculate1 example->vector) ;; => 37.0
+(calculate1 input->vector) ;; => 356992.0
+
+;; Part 2
+(calculate2 example->vector) ;; => 168
+(calculate2 input->vector) ;; => 101268111
+
+
+
