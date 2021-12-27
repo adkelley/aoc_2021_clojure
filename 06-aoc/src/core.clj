@@ -11,58 +11,43 @@
   [data]
   (->> data
        (re-seq #"\d")
-       (map #(Integer/parseInt %))))
+       (mapv #(Integer/parseInt %))))
 
-(data->vector example) ;; => (3 4 3 1 2)
+(data->vector example) ;; => [3 4 3 1 2]
 (data->vector input)
 
-(defn new-fish
-  "Return # of new-fish to spawn"
-  [lanterns]
-  (count
-   (for [lantern lanterns
-         :when (= 0 lantern)]
-     lantern)))
+(defn initial-timers
+  "Returns inital timers of fish"
+  [fish]
+  (let [state (vec (repeat 9 0))]
+    (reduce #(update %1 %2 inc) state fish)))
 
-(defn reset-lanterns
-  ""
-  [lanterns]
-  (let [reset-lantern #(if (= 0 %) 6 %)]
-    (map reset-lantern lanterns)))
+(initial-timers (data->vector example)) ;; => [0 1 1 2 1 0 0 0 0]
 
-(defn spawn-lanterns
-  ""
-  [spawns lanterns]
-  (loop [i spawns
-         lanterns lanterns]
-    (if (= 0 i)
-      lanterns
-      (recur (dec i) (cons 6 (cons 8 lanterns))))))
 
-;; [Int] -> [Int]
-(defn after-one-day
-  "Return state of lantern fish after one-day" 
-  [lanterns]
-  (let [p (partial not= 0)
-        spawns (count (filter (partial = 0) lanterns))
-        ]
-    (->> (filter p lanterns) 
-         (map dec)
-         (spawn-lanterns spawns)
-         )))
+(defn next-day
+  "Return state of fish after one-day"
+  [fish]
+  (let [v8 (get fish 0)
+        v6 #(assoc % 6 (+ v8 (get % 6)))]
+    (v6 (assoc (vec (drop 1 fish)) 8 v8))))
 
-(after-one-day '(6 3 2 0 1))
 
-;; Int -> [Int] -> Int
+(next-day (next-day (next-day (next-day [0 1 1 2 1 0 0 0 0]))))
+;; => [1 1 2 1 0 0 0 0 0]
+;; => [1 2 1 0 0 0 1 0 1]
+;; => [2 1 0 0 0 1 1 1 1]
+;; => [1 0 0 0 1 1 3 1 2]
+
+
 (defn calculate
   "Return number of latern fish created after days"
-  [days lanterns] 
-  (loop [days days
-         lanterns lanterns]
-    (if (= 0 days)
-      lanterns
-      (recur (dec days) (after-one-day lanterns)))))
+  [days fish] 
+  (reduce + (last (take (inc days) (iterate next-day fish)))))
 
-(count (calculate 80 (data->vector example))) ;; => 5934
+(calculate 80 (initial-timers (data->vector example))) ;; => 5934
+(calculate 80 (initial-timers (data->vector input))) ;; => 360610
 
-(count (calculate 80 (data->vector input))) ;; => 360610
+;; Part 2
+(calculate 256 (initial-timers (data->vector example))) ;; => 26984457539
+(calculate 256 (initial-timers (data->vector input))) ;; => 1631629590423
