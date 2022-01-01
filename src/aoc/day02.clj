@@ -1,5 +1,7 @@
-(ns aoc.core)
-(require '[clojure.string :refer [split]])
+(ns aoc.day02
+  (:require
+   [clojure.java.io :as io]
+   [clojure.string :as string]))
 
 ;; Advent of Code 2021
 ;; Day 2: Dive
@@ -12,71 +14,69 @@ up 3
 down 8
 forward 2")
 
-(def input (slurp "resources/day02.txt"))
+(defn split
+  ""
+  [re s]
+  (string/split s re))
 
-(defn string->xs
-  "Return a vector of strings from a string separated by a line breaks"
-  [s]
-  (split s #"\n"))
+:input "down 5"
+:output {:down 5}
 
-(string->xs example)
-;; => ["forward 5" "down 5" "forward 8" "up 3" "down 8" "forward 2"]
+(defn parse-line
+  ""
+  [line]
+  (let [[            _  k     v]
+        (re-matches #"(\w+) (\d+)" line)]
+    [(keyword k) (Integer/parseInt v)]))
 
-(defn get-command
-  "Return the command (i.e., forward, down, up) proceeded by units"
-  [s]
-  (->> (split s #" ")
-       first))
+:input "down 5\nup 3\n"
+:output [{:down 5} {:up 3}]
 
-(get-command "forward 5") ;; => "forward"
+(defn read-positions
+  ""
+  [filename]
+  (with-open [rdr (io/reader (io/resource filename))]
+    (->>
+     rdr
+     line-seq
+     (mapv parse-line))))
 
-(defn get-units
-  "Return the units from a string preceded by a command"
-  [s]
-  (->> (split s #" ")
-       second
-       Integer/parseInt))
 
-(get-units "forward 5");; => 5
+(defn part1
+  "What do you get if you multiply your final horizontal position by your final depth? "
+  [ms]
+  (let [f (fn [[position depth] [k v]]
+            (case k
+              :forward [(+ position v) depth]
+              :up      [position      (- depth v)]
+              :down    [position      (+ depth v)]
+              :default [position depth]))]
+       (reduce f [0 0] ms)))
 
-(def position
-  "Use an atom to store the position state"
-  (atom {:depth 0 :horiz 0 :aim 0}))
+(defn part2
+  "What do you get if you multiply your final horizontal position by your final depth?"
+  [ms]
+  (let [f (fn [[position depth aim] [k v]]
+            (case k
+              :forward [(+ position v) (+ depth (* aim v)) aim]
+              :up      [position depth (- aim v)]
+              :down    [position depth (+ aim v)]
+              :default [position depth aim]))]
+    (reduce f [0 0 0] ms)))
 
-(defn update-position-p1
-  "Part 1 Instructions"
-  [x]
-  (let [command (get-command x)
-         units   (get-units x)]
-   (cond
-     (= command "forward") (swap! position update :horiz + units)
-     (= command "up") (swap! position update :depth - units)
-     (= command "down") (swap! position update :depth + units))))
+(->>
+ example
+ (split #"\n")
+ (mapv parse-line)
+ #_part1
+ part2
+ (take 2)
+ (apply *))
 
-(defn update-position-p2
-  "Part 2 Instructions"
-  [x]
-  (let [command (get-command x)
-        units   (get-units x)]
-    (cond
-      (= command "forward") (do
-                              (swap! position update :horiz + units)
-                              (swap! position update :depth + (* (get @position :aim) units)))
-      (= command "up") (swap! position update :aim - units)
-      (= command "down") (swap! position update :aim + units))))
-
-(defn pilot
-  "Keep track of the submarine's position.
-   Return depth * horizontal for final result"
-  [xs update-fn]
-  (if (empty? xs)
-    (* (get @position :horiz) (get @position :depth))
-    (do
-      (update-fn (first xs))
-      (recur (rest xs) update-fn))))
-
-(pilot (string->xs example) update-position-p1) ;; => 150
-(pilot (string->xs input) update-position-p1) ;; => 1882980
-
-(pilot (string->xs example) update-position-p2) ;; => 900
-(pilot (string->xs input) update-position-p2) ;; => 1971232560
+(->>
+ "day02.txt"
+ read-positions
+ #_part1
+ part2
+ (take 2)
+ (apply *))
