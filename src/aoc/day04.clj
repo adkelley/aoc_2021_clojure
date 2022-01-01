@@ -26,7 +26,7 @@
   22 11 13  6  5
   2  0 12  3  7")
 
-(def puzzle-input (split-lines (slurp "resources/input.txt")))
+(def puzzle-input (split-lines (slurp "resources/day04.txt")))
 (def puzzle-example (split-lines example))
 
 (defn random-numbers

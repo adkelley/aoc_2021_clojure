@@ -16,7 +16,7 @@
 260
 263")
 
-(def input (slurp "resources/input.txt"))
+(def input (slurp "resources/day01.txt"))
 
 (defn string->depths
   "Returns a vector of integers from a string of integers separated by line breaks"

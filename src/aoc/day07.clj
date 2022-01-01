@@ -5,7 +5,7 @@
 (def example
   "16,1,2,0,4,2,7,1,2,14")
 
-(def input (slurp (io/resource "input.txt")))
+(def input (slurp (io/resource "day07.txt")))
 
 (defn data->vector
   "Return [Long] from input data"

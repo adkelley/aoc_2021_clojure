@@ -4,7 +4,7 @@
 
 (def example "3,4,3,1,2")
 
-(def input (slurp (io/resource "input.txt")))
+(def input (slurp (io/resource "day06.txt")))
 
 (defn data->vector
   ""

@@ -12,7 +12,7 @@ up 3
 down 8
 forward 2")
 
-(def input (slurp "resources/input.txt"))
+(def input (slurp "resources/day02.txt"))
 
 (defn string->xs
   "Return a vector of strings from a string separated by a line breaks"

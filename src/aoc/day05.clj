@@ -15,7 +15,7 @@
 0,0 -> 8,8
 5,5 -> 8,2")
 
-(def input (slurp (io/resource "input.txt")))
+(def input (slurp (io/resource "day05.txt")))
 
 (defn data->lines
   "Return collection of integers representing line

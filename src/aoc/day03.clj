@@ -19,7 +19,7 @@
 00010
 01010")
 
-(def input (slurp "resources/input.txt"))
+(def input (slurp "resources/day03.txt"))
 
 (defn str->bits
   ""
